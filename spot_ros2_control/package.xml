@@ -19,12 +19,18 @@ Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>spot_hardware_interface</depend>
+  <depend>std_srvs</depend> 
+  <depend>spot_msgs</depend> 
+  <depend>yaml-cpp</depend> 
 
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>spot_description</exec_depend>
   <exec_depend>spot_driver</exec_depend>
   <exec_depend>spot_controllers</exec_depend>
   <exec_depend>xacro</exec_depend>
+  <exec_depend>joy</exec_depend>
+  <exec_depend>teleop_twist_joy</exec_depend>
+
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

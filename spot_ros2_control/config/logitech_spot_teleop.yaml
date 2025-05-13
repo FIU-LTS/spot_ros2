@@ -1,0 +1,72 @@
+# Configuration for the teleop_twist_joy node
+teleop_twist_joy_node:
+  ros__parameters:
+    # ---- General Parameters ----
+    # Set to true to require a button press to enable joystick control
+    require_enable_button: true
+    # Index of the button used to enable motion (e.g., trigger or thumb button).
+    # Verify this index by echoing the /joy topic (e.g., 'ros2 topic echo /joy').
+    # Example: buttons[0] for trigger, buttons[1] for thumb button, etc.
+    enable_button: 1 # Current value: 1. Adjust if your desired button is different.
+
+    # Optional: Index of the button for a "turbo" or higher speed mode.
+    # enable_turbo_button: 1 # Example: using button 1 for turbo
+
+    # ---- Axis Mapping ----
+    # Maps joystick axes to linear components of the Twist message.
+    # Values are the indices from the 'axes' array in the /joy message.
+    axis_linear:
+      # Forward/backward motion (maps to linear.x of Twist message)
+      # Typically, joystick Y-axis (e.g., axes[1]).
+      # Note: If pushing forward gives a negative value, you might need to invert the scale_linear.x.
+      x: 1
+      # Strafe left/right motion (maps to linear.y of Twist message)
+      # Typically, joystick X-axis (e.g., axes[0]).
+      y: 0
+      # Up/down motion (maps to linear.z of Twist message) - Often unused for ground robots.
+      # z: -1 # Use -1 to disable this axis if not needed.
+
+    # Maps joystick axes to angular components of the Twist message.
+    axis_angular:
+      # Rotational motion / yaw (maps to angular.z of Twist message)
+      # Typically, joystick Z-axis (twist of the stick, e.g., axes[2] or axes[3]).
+      yaw: 2
+      # Body pitch - Often unused for ground robot base control via cmd_vel.
+      # pitch: -1 # Use -1 to disable.
+      # Body roll - Often unused for ground robot base control via cmd_vel.
+      # roll: -1  # Use -1 to disable.
+
+    # ---- Scaling Factors for Velocity ----
+    # Maximum speeds when the enable_button is pressed.
+    # Adjust these values to suit your robot and preferences.
+    scale_linear:
+      # Max speed for linear.x (e.g., m/s).
+      # If joystick forward is -1.0 and you want positive linear.x, make this scale negative.
+      x: 0.5
+      # Max speed for linear.y (e.g., m/s).
+      y: 0.3
+      # Max speed for linear.z (e.g., m/s) - if used.
+      # z: 0.0
+
+    scale_angular:
+      # Max speed for angular.z / yaw (e.g., rad/s).
+      yaw: 0.8
+      # Max speed for angular.y / pitch (e.g., rad/s) - if used.
+      # pitch: 0.0
+      # Max speed for angular.x / roll (e.g., rad/s) - if used.
+      # roll: 0.0
+
+    # ---- Optional: Turbo Mode Scaling ----
+    # Scaling factors if 'enable_turbo_button' is used and pressed.
+    # scale_linear_turbo:
+    #   x: 1.0
+    #   y: 0.6
+    # scale_angular_turbo:
+    #   yaw: 1.2
+
+    # ---- Output Topic ----
+    # Specifies the topic to publish Twist messages to.
+    # Default is typically /cmd_vel.
+    # If your spot_ros2 driver listens on a different topic (e.g., /spot/cmd_vel),
+    # you can set it here or use remappings in your launch file.
+    # cmd_vel: "/spot/cmd_vel"

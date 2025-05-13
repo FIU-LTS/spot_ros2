@@ -1,0 +1,30 @@
+# joy_to_service_mappings.yaml
+# This is the configuration file for the joy_service_caller_node
+# It maps joystick button presses to specific ROS 2 service calls.
+
+# Node specific parameters are typically nested under the node name
+joy_service_caller: # Or use the fully qualified node name if preferred by your conventions
+  ros__parameters:
+    # List of mappings, each defining a button and its corresponding service call
+    service_mappings:
+      - button_id: 2 # Renamed from button_index for clarity, but YAML key from user was button_index.
+                      # The code will expect 'button_index' from YAML based on previous example.
+                      # Let's assume the YAML key is 'button_index' to match your original request.
+        button_index: 2 # Physical button index from /joy topic
+        service_name: "/undock"
+        service_type: "std_srvs/srv/Trigger" # Full service type name
+        # request_payload: {} # Arguments for the service request (optional for Trigger)
+
+      - button_index: 3
+        service_name: "/dock"
+        service_type: "spot_msgs/srv/Dock"
+        request_payload: # Arguments for the service request
+          dock_id: 521
+
+      - button_index: 4
+        service_name: "/sit"
+        service_type: "std_srvs/srv/Trigger"
+
+      - button_index: 5
+        service_name: "/stand"
+        service_type: "std_srvs/srv/Trigger"

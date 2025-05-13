@@ -13,12 +13,16 @@ endif()
 
 # Dependencies
 find_package(ament_cmake REQUIRED)
+find_package(yaml-cpp REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(spot_msgs REQUIRED) # <--- Add this line
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   rclcpp_lifecycle
   sensor_msgs
   std_msgs
   spot_hardware_interface
+
 )
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
@@ -59,7 +63,16 @@ target_link_libraries(wiggle_arm spot_ros2_control)
 add_executable(joint_command_passthrough src/joint_command_passthrough.cpp)
 target_link_libraries(joint_command_passthrough spot_ros2_control)
 
-install(TARGETS noarm_squat wiggle_arm joint_command_passthrough
+add_executable(joy_service_caller src/joy_service_caller.cpp)
+# Use ament_target_dependencies for external ROS/ament/library dependencies
+ament_target_dependencies(joy_service_caller rclcpp sensor_msgs yaml-cpp std_srvs spot_msgs) # <--- Add this line, listing all direct dependencies
+# Link your local library
+target_link_libraries(joy_service_caller
+  spot_ros2_control
+  ${YAML_CPP_LIBRARIES}
+)
+
+install(TARGETS noarm_squat wiggle_arm joint_command_passthrough joy_service_caller # <--- Add joy_service_caller here
   DESTINATION lib/${PROJECT_NAME})
 
 install(
