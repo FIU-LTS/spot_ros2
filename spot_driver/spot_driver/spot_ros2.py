@@ -2504,23 +2504,27 @@ class SpotROS(Node):
         self.spot_wrapper.velocity_cmd(data.linear.x, data.linear.y, data.angular.z, self.cmd_duration)
 
     def body_pose_callback(self, data: Pose) -> None:
-        """Callback for cmd_vel command"""
+        """Callback for cmd_vel command""" # Typo in comment, this is for body_pose
         if self.spot_wrapper is None:
             self.get_logger().info("Mock mode, received command pose " + str(data))
             return
-        q = Quaternion()
+        q = Quaternion() # bosdyn.api.geometry_pb2.Quaternion
         q.x = data.orientation.x
         q.y = data.orientation.y
         q.z = data.orientation.z
         q.w = data.orientation.w
-        position = geometry_pb2.Vec3(z=data.position.z)
+        position = geometry_pb2.Vec3(z=data.position.z) # Only z is used
         pose = geometry_pb2.SE3Pose(position=position, rotation=q)
         point = trajectory_pb2.SE3TrajectoryPoint(pose=pose)
         traj = trajectory_pb2.SE3Trajectory(points=[point])
+        # This constructs BodyControlParams with base_offset_rt_footprint
         body_control = spot_command_pb2.BodyControlParams(base_offset_rt_footprint=traj)
 
+        # This gets the *current* mobility parameters
         mobility_params = self.spot_wrapper.get_mobility_params()
+        # This copies the new body_control into the current parameters
         mobility_params.body_control.CopyFrom(body_control)
+        # This sends the *updated* mobility parameters to the robot
         self.spot_wrapper.set_mobility_params(mobility_params)
 
     def arm_joint_cmd_callback(self, data: JointState) -> None:

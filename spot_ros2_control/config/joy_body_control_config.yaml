@@ -1,0 +1,12 @@
+joy_body_pose_controller:
+  ros__parameters:
+    enabled: true
+    # This should match the button used to enable main robot movement teleop (e.g., L1)
+    teleop_main_enable_button_idx: 1 # Your actual teleop button index
+    axis_body_roll: 0                # Your actual roll axis index
+    axis_body_pitch: 1               # Your actual pitch axis index
+    scale_body_roll: 0.3
+    scale_body_pitch: 0.3
+    deadzone: 0.15
+    body_pose_topic_name: "body_pose"
+    stand_call_interval_sec: 1.5 # Interval in seconds between stand call attempts

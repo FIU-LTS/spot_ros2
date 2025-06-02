@@ -1,10 +1,7 @@
 # Copyright (c) 2024 Boston Dynamics AI Institute LLC. All rights reserved.
 
 cmake_minimum_required(VERSION 3.22)
-
-# This is here so we can use jthread from C++ 20
 set(CMAKE_CXX_STANDARD 20)
-
 project(spot_ros2_control)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -13,16 +10,28 @@ endif()
 
 # Dependencies
 find_package(ament_cmake REQUIRED)
-find_package(yaml-cpp REQUIRED)
-find_package(std_srvs REQUIRED)
-find_package(spot_msgs REQUIRED) # <--- Add this line
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_srvs REQUIRED) # <<< ENSURE THIS IS PRESENT
+find_package(spot_msgs REQUIRED)
+find_package(bosdyn_api_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED) # Changed from yaml-cpp_vendor if you use system yaml-cpp
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(proto2ros REQUIRED)
+
+# Find Bosdyn SDK and Protobuf libraries
+find_package(bosdyn_cmake_module REQUIRED)
+find_package(bosdyn REQUIRED)
+find_package(Protobuf REQUIRED)
+
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   rclcpp
   rclcpp_lifecycle
   sensor_msgs
   std_msgs
   spot_hardware_interface
-
 )
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
@@ -30,13 +39,10 @@ endforeach()
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-# Add the hardware interface
 add_library(
   spot_ros2_control
   SHARED
@@ -52,8 +58,6 @@ ament_target_dependencies(
   ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
-
-# Add example nodes and install them
 add_executable(noarm_squat src/noarm_squat.cpp)
 target_link_libraries(noarm_squat spot_ros2_control)
 
@@ -63,35 +67,70 @@ target_link_libraries(wiggle_arm spot_ros2_control)
 add_executable(joint_command_passthrough src/joint_command_passthrough.cpp)
 target_link_libraries(joint_command_passthrough spot_ros2_control)
 
+# Joy Service Caller (Buttons)
 add_executable(joy_service_caller src/joy_service_caller.cpp)
-# Use ament_target_dependencies for external ROS/ament/library dependencies
-ament_target_dependencies(joy_service_caller rclcpp sensor_msgs yaml-cpp std_srvs spot_msgs) # <--- Add this line, listing all direct dependencies
-# Link your local library
+ament_target_dependencies(joy_service_caller
+  rclcpp
+  sensor_msgs
+  yaml-cpp
+  std_srvs
+  spot_msgs
+)
 target_link_libraries(joy_service_caller
-  spot_ros2_control
   ${YAML_CPP_LIBRARIES}
 )
 
-install(TARGETS noarm_squat wiggle_arm joint_command_passthrough joy_service_caller # <--- Add joy_service_caller here
+# Joy Body Pose Controller (Axes)
+add_executable(joy_body_pose_controller src/joy_body_pose_controller.cpp)
+ament_target_dependencies(joy_body_pose_controller
+  rclcpp
+  sensor_msgs
+  std_srvs # <<< ADDED THIS DEPENDENCY
+  yaml-cpp
+  tf2_geometry_msgs
+  geometry_msgs
+)
+target_link_libraries(joy_body_pose_controller
+  ${YAML_CPP_LIBRARIES}
+)
+
+# New Pose to RobotCommand Translator Node
+add_executable(pose_to_robot_command_translator src/pose_to_robot_command_node.cpp)
+ament_target_dependencies(pose_to_robot_command_translator
+  rclcpp
+  rclcpp_action
+  geometry_msgs
+  spot_msgs
+  bosdyn_api_msgs
+  proto2ros
+)
+target_link_libraries(pose_to_robot_command_translator
+  bosdyn::bosdyn_client # From spot_driver CMakeLists.txt
+  ${Protobuf_LIBRARIES}
+)
+
+install(TARGETS
+  noarm_squat
+  wiggle_arm
+  joint_command_passthrough
+  joy_service_caller
+  joy_body_pose_controller
+  pose_to_robot_command_translator
   DESTINATION lib/${PROJECT_NAME})
 
 install(
   DIRECTORY include/
   DESTINATION include
 )
-
 install(
-  DIRECTORY launch config rviz
+  DIRECTORY launch config # Removed rviz
   DESTINATION share/${PROJECT_NAME}
 )
-
 install(TARGETS spot_ros2_control
   EXPORT export_spot_ros2_control
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-
 ament_export_targets(export_spot_ros2_control HAS_LIBRARY_TARGET)
-
 ament_package()

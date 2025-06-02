@@ -2,58 +2,108 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
 
 def generate_launch_description():
-    # Substitute 'your_actual_package_name' with the name of your ROS 2 package
     package_name = 'spot_ros2_control'
 
-    # Path to teleop_twist_joy configuration (if still used)
+    # Declare the spot_name launch argument
+    spot_name_arg = DeclareLaunchArgument(
+        'spot_name',
+        default_value='',
+        description='Namespace for Spot robot nodes and topics (e.g., spot1)'
+    )
+    spot_name_config = LaunchConfiguration('spot_name')
+
+    # Get config file paths
     teleop_joy_config_filepath = os.path.join(
         get_package_share_directory(package_name),
         'config',
-        'logitech_spot_teleop.yaml' # Assuming this is your existing teleop config
+        'logitech_spot_teleop.yaml'
     )
 
-    # Path to the new joy_to_service_mappings configuration
-    joy_to_service_mappings_filepath = os.path.join(
+    joy_service_mappings_filepath = os.path.join(
         get_package_share_directory(package_name),
-        'config', # Assuming you place it in a 'config' subfolder within share
-        'joy_service_mapping.yaml' # Renamed config file
+        'config',
+        'joy_service_mapping.yaml'
     )
 
-    # Node for reading joystick input
+    joy_body_pose_config_filepath = os.path.join(
+        get_package_share_directory(package_name),
+        'config',
+        'joy_body_control_config.yaml' # Config for joy_body_pose_controller
+    )
+
+    # Config file for the new translator node
+    pose_to_robot_command_config_filepath = os.path.join(
+        get_package_share_directory(package_name),
+        'config',
+        'pose_to_robot_command_config.yaml' # Config for pose_to_robot_command_translator
+    )
+
+    # Nodes
     joy_node = Node(
         package='joy',
         executable='joy_node',
-        name='joy_node', # Standard name for the joy driver node
+        name='joy_node',
+        namespace=spot_name_config,
         parameters=[{
-            'dev': '/dev/input/js0', # Verify your joystick device
+            'dev': '/dev/input/js0', # Adjust if your joystick is different
             'deadzone': 0.1,
             'autorepeat_rate': 20.0
         }]
     )
 
-    # Node for converting joystick to cmd_vel (if still needed)
     teleop_twist_joy_node = Node(
         package='teleop_twist_joy',
         executable='teleop_node',
-        name='teleop_twist_joy_node', # Common name for this node
+        name='teleop_twist_joy_node',
+        namespace=spot_name_config,
         parameters=[teleop_joy_config_filepath],
     )
 
-    # C++ Node for mapping joystick buttons to service calls
     joy_service_caller_node = Node(
         package=package_name,
-        executable='joy_service_caller', # Renamed executable
-        name='joy_service_caller', # Renamed runtime node name
+        executable='joy_service_caller',
+        name='joy_service_caller',
+        namespace=spot_name_config,
         output='screen',
         parameters=[{
-            'mappings_file_path': joy_to_service_mappings_filepath
+            'mappings_file_path': joy_service_mappings_filepath,
+            'spot_name': spot_name_config
         }]
     )
 
+    joy_body_pose_controller_node = Node(
+        package=package_name,
+        executable='joy_body_pose_controller',
+        name='joy_body_pose_controller',
+        namespace=spot_name_config,
+        output='screen',
+        parameters=[{
+            "config_file_path": joy_body_pose_config_filepath,
+            "spot_name": spot_name_config  # <<< ADDED spot_name parameter
+        }]
+    )
+
+    pose_to_robot_command_node = Node(
+        package=package_name,
+        executable='pose_to_robot_command_translator',
+        name='pose_to_robot_command_translator',
+        namespace=spot_name_config,
+        output='screen',
+        parameters=[
+            pose_to_robot_command_config_filepath,
+            {'spot_name': spot_name_config}
+        ]
+    )
+
     return LaunchDescription([
+        spot_name_arg,
         joy_node,
-        teleop_twist_joy_node, # Uncomment if you still need cmd_vel control from joystick
-        joy_service_caller_node
+        teleop_twist_joy_node,
+        joy_service_caller_node,
+        joy_body_pose_controller_node,
+        pose_to_robot_command_node
     ])

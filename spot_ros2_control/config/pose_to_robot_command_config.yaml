@@ -1,0 +1,6 @@
+pose_to_robot_command_translator: # This must match the node name used in the launch file
+  ros__parameters:
+    input_pose_topic: "body_pose" # <<< This must match the output topic from joy_body_pose_controller
+    robot_command_action_name: "robot_command" # Default action name used by spot_driver
+    # spot_name: "" # This parameter will be overridden by the launch file argument
+    command_duration_secs: 0.25 # Duration for the robot to reach the commanded pose
